@@ -1,0 +1,204 @@
+import random
+import time
+#initlize credits, gameStart false to confirm playthrough. splitTrue False unless updated else.
+
+credits = 1000
+gameStart = False
+splitTrue = False
+#Get card and add to the turns hand and remove from deck.
+def hand(turn):
+    card = random.choice(deck)
+    turn.append(card)
+    deck.remove(card)
+#get card without appending to a list.
+def getCard():
+    card = random.choice(deck)
+    deck.remove(card)
+    return card
+
+#Get value for  hands
+def handValue(hand):
+    value = 0
+    acefirst = 0
+    aceChoice = 0
+    for i in hand:
+        if str(i).isalpha(): 
+            if i == 'A':
+                if acefirst == 0:
+                    acefirst += 1
+                else:
+                    if value == 10:
+                        value += 11
+                    elif value < 10:
+                        aceChoice = int(input("Make ace 11 or 1?"))
+                        value += aceChoice
+            else:
+                value += 10
+        else:
+            value += i
+    return value
+
+def formatHand(turn):
+    formatted = str(turn[0])
+    for i in range(1,len(turn)):
+        formatted = formatted + ", " + str(turn[i])
+    return formatted
+
+def handBust(turn):
+        bust = False
+        while bust == False:
+            if turn == dealer:
+                if handValue(hand) < 16:
+                    hand(dealer)
+                    print(f"Dealer Hand: {dealer}")
+                    if handValue > 21:
+                        bust = True
+                        return True
+                else:
+                    if handValue(hand) > 21:
+                        bust = True
+                        return True
+                    else:
+                        return False
+            else:
+                if handValue(hand) > 21:
+                   bust = True
+                   return True
+                else:
+                    return False
+def CheckSplit(turn):
+    temp = turn
+    alrSplitTemp = []
+    tempLen  = [len(temp), len(alrSplitTemp)]
+    i = 0
+    tempHold = []
+    if len(turn[i]) > 1:
+        for hands in turn:
+            tempSplit = []
+            tempHold =  hands
+            while i != -1:
+                if i >= len(tempHold):
+                    break
+                if tempHold[i] == tempHold[i-1]:
+                    tempSplit.append([tempHold[i-1],getCard()])
+                    tempHold.remove(tempHold[i-1])
+                else:
+                    try:
+                        if temp[i] == temp[i+2]:
+                            tempSplit.append([tempHold[i-1],getCard()])
+                            tempHold.remove(tempHold[i-1])
+                    except:
+                        pass
+                i += 1
+            alrSplitTemp.append(tempSplit)
+            
+        checkLen = len(temp)
+        
+    else:
+        while i != -1: 
+            if i >= len(temp):
+                break
+            if temp[i] == temp[i-1]:
+                tempSplit.append([temp[i-1],getCard()])
+                temp.remove(temp[i-1])
+            else:
+                try:
+                    if temp[i] == temp[i+2]:
+                        tempSplit.append([temp[i-1],getCard()])
+                        temp.remove(temp[i-1])
+                except:
+                    pass
+            i += 1
+        hand.append[temp + tempSplit]
+        return True
+        
+def checkSplitBust(hand):
+        for i in range(hand):
+            if handBust(hand[i]):
+                splitHands[i] = 0
+            else:
+                splitHands[i] = 1
+def splitGamePlay():
+        print(f"Your New Hands:\t{player[0]}, {player[1]}")
+        credits -= 100
+        print(f"New Balance: {credits}")
+
+        
+        while handBust(player) == False:
+            for hand in player:
+                while handBust(hand) != True:
+                    hitCall = str(input(f"Hand:{hand} Hit or call? "))
+                    if hitCall.lower() == "y":
+                        hand.append(getCard())
+                        if handBust(player):
+                            print("That hand busted!")
+                    else:
+                        break
+
+
+        checkSplitBust(player)
+        print(f"Dealer Hand:\t{dealer}") 
+        x = handBust(dealer)
+        if x:
+            print("Dealer has busted!")
+            if 1 in splitHands:
+                if 0 not in splitHands:
+                    print(f"All your hands won! you win {str((len(splitHands)) * 200)} credits!")
+                else:
+                    for i in range(len(splitHands)):
+                        time.sleep(0.25)
+                        if numSplit[i] == 1:
+                            print(f"Hand:  {splitHands[i]}  has won!\n+200 Credits")
+                            credits += 100
+                        else:
+                            print(f"Hand: {splitHands[i]} has lost. You get nothing.")
+#Playthrough
+print("Welcome to BlackJack!\n\nIt is 100 credits to play\n")
+while gameStart == False:
+    play = str(input(f"You have {credits}, would you like to play? y / n : "))
+    if play.lower() == "y":
+        credits -= 100
+        print(f"Great. Your new balance is {credits} credits") 
+        gameStart = True
+        break
+    elif play.lower() == 'n':
+        print("Play soon!")
+        break
+    else:
+        print("Input Not Valid, Try Again.")
+
+while gameStart:
+    #initlaza within game in order to reset each playthrough.
+    deck = [1,2,3,4,5,6,7,8,9,10,'J','Q','K','A', 1,2,3,4,5,6,7,8,9,10,'J','Q','K','A', 1,2,3,4,5,6,7,8,9,10,'J','Q','K','A', 1,2,3,4,5,6,7,8,9,10,'J','Q','K','A']
+    dealer = []
+    player = []
+    splitHands = []
+    numSplit = []
+    time.sleep(0.5)
+    for i in range(2):
+        hand(player)
+        hand(dealer)
+    print(f"Your Hand:\t{formatHand(player): <10}\nDealer:{dealer[0]: >10}, #")
+    time.sleep(0.25)
+    splitTrue = CheckSplit(player)
+    if splitTrue:
+        splitGamePlay()
+    else:
+        while handBust(player) == False:
+            hitCall = str(input(f"Hand:{player} Hit or call? "))
+            if hitCall.lower() == "y":
+                hand(player)
+                if handBust(player):
+                    print("Your hand busted!\nYou lose.")
+                    break
+            else:
+                break
+        x = handBust(dealer)
+        if x:
+            print("Dealer has busted!")
+
+    playAgain = str(input(f"You have {credits}, would you like to play? y / n : "))
+    if play.lower() == "y":
+        credits -= 100
+        print(f"Great. Your new balance is {credits} credits") 
+    break
