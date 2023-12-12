@@ -1,0 +1,247 @@
+# Emmanuel GIorn
+# CSC110 Final Project - Blackjack
+#Due: December 8, 2023
+
+import random
+
+
+#As name implies, creates the deck , combining faces with suits
+def createDeck():
+    faces = ['A','2','3','4','5','6','7','8','9','T','J','Q','K']
+    suits = ['D','C','S','H']
+    deck = []
+    for face in faces:
+        for suit in suits:
+            card = face + suit
+            deck.append(card)
+    return deck
+
+
+#calculates hands lowest possible value
+def handValue(turn):
+    value = 0
+    for cards in turn:
+        card = cards[0]
+        try:
+            if int(card) == int(card):
+                value += int(card)
+        except:
+            if card == 'A':
+                value += 1
+            else:
+                value += 10
+    return value
+
+
+#deals card to turn, player or dealer
+def dealCard(turn, deck):
+    card = random.choice(deck)
+    turn.append(card)
+    deck.remove(card)
+
+#checks if a push (tie between player and dealer) happens
+def checkPush():
+    playerV = handValue(player)
+    dealerV = handValue(dealer)
+    if playerV == dealerV:
+        return True
+    else:
+        return False
+
+#check if hand busts, (lowest value is above 21)
+def handBust(turn):
+    if handValue(turn) > 21:
+        return True
+    else:
+        return False
+    
+#returns the highest value in hand that doesn't bust, or just lowest if hand busts
+def bestValue(values):
+    bestVal = 0
+    for value in values:
+        if value > bestVal and value <= 21:
+            bestVal = value
+    if bestVal == 0:
+        bestVal = values[0]
+    
+    return bestVal
+
+#goes through dealer's game play, gets best value for dealer, checks if busts, checks if dealer is within the threshold of atleast a value of 16 to deal another card
+def dealerBust(dealer, dealerVals, LDeck):
+    bust = False
+    thres = False
+    
+    bestVal = bestValue(dealerVals)
+    while bust == False and thres == False:
+                value = handValue(dealer)
+                dealerVals[0] = value
+                numAce, dealerVals = acesInHand(dealer, dealerVals)
+                bestVal = bestValue(dealerVals)
+                
+                print(f"Dealer hand value is:   {bestVal}")
+                if len(LDeck) == 0:
+                    LDeck = createDeck()
+                    print("\nDealing new deck")
+                if value  > 21:
+                    print("Dealer BUSTS")
+                    bust = True
+                if bestVal >= 16:
+                    thres = True
+                if bestVal < 16:
+                    print(f"Dealer taking\n")
+                    dealCard(dealer, LDeck)       
+                    print(f"Dealer hand is:   " + " ".join(dealer))
+                                
+    return bust, bestVal, LDeck
+    
+    
+#If player has aces, it will use this format to display hand value 
+def printAces(playerVals, numAces):
+    print(f"You have {numAces} ace(s) in your hand. Your current hand value is:  {playerVals[0]}")
+    for i in range(1, numAces + 1):
+        print(f"or {playerVals[i]}")
+            
+#displays players hand and dealer's showing card
+def displayHands(player, dealer):
+    print(f"Your hand is:   " + " ".join(player))
+    print(f"Dealer is showing:   {dealer[1]}")
+
+#Checks for aces in hand, if there is aces, it will update other possible hand values.
+def acesInHand(hand, handValues):
+    numAces = 0
+    for cards in hand:
+        card = cards[0]
+        if card == "A":
+            numAces += 1
+    if numAces > 0:
+        handValues[1] = handValues[0] + 10
+        if numAces > 1:
+            handValues[2] = handValues[0] + (10 * numAces)
+        
+    return numAces, handValues
+
+#checks if hand passed has black jack
+def checkBlackJack(handVals, hand):
+    for value in handVals:
+        if value == 21 and len(hand) == 2:
+            return True
+
+#goes through gameplay
+def main(seedValue):
+    #initilize first deck and score
+    score = 0
+    deck = createDeck()        
+    random.seed(seedValue)
+    #looping until keepPlaying is False from when play does not want to play anymore.
+    keepPlaying = True
+    while keepPlaying == True:
+        dealer = []
+        player = []
+        #deal first hand
+        for i in range(2):
+            #if no more cards in deck, start a new deck
+            if len(deck) == 0:
+                print("\nDealing new deck")
+                deck = createDeck()
+            dealCard(player, deck)
+            if len(deck) == 0:
+                print("\nDealing new deck")
+                deck = createDeck()
+            dealCard(dealer, deck)  
+            
+        #intilize player and dealer values, filling zeros for future possible ace values for simple modification
+        playerVals = [handValue(player),0,0]
+        dealerVals = [handValue(dealer),0,0]
+        
+    #check for aces in hand, uodate as so
+        pNumAces, playerVals = acesInHand(player, playerVals)
+        dNumAces, dealerVals = acesInHand(dealer, dealerVals)
+        #display intilize hand and dealer showing card
+        displayHands(player, dealer)
+        
+        #initlize endTurn to false, change to True when player wants to stand
+        endTurn = False
+        #check for player blackjack
+        haveBlackJack = checkBlackJack(playerVals, player)
+        #if player doesn't have black jack, if player has aces, print hand value with aces , if not, display normal
+        if haveBlackJack != True:
+            bestPlayVal = bestValue(playerVals)
+            if pNumAces > 0:
+                    printAces(playerVals, pNumAces)
+            else:
+                print(f"Your current hand value is:  {bestPlayVal}")
+        
+        #player game play
+        while playerVals[0] <= 21 and endTurn == False and haveBlackJack != True:
+            if len(deck) == 0:
+                deck = createDeck()
+                print("\nDealing new deck")
+                #ask player to hit or stay, hit to deal another card, stay to pass turn
+            hitStay = str(input("\nType H to hit or S to stay: "))
+            if hitStay.lower() == "h":
+                #whenever player hits,a new card will be given, player handvalue will be updated and along with any aces that they have or arrive. Display hand and values aswell.
+                dealCard(player, deck)
+                playerVals[0] = handValue(player)
+                displayHands(player, dealer)
+                pNumAces, playerVals = acesInHand(player, playerVals)
+                bestPlayVal = bestValue(playerVals)
+                if pNumAces > 0:
+                    printAces(playerVals, pNumAces)
+                else:
+                    print(f"Your current hand value is:  {bestPlayVal}")
+            elif hitStay.lower() == "s":
+                endTurn = True
+                #end loop if player chooses to stay
+            else:
+                print("Invalid input, try again...")
+                #uneccasary but added a invalid input option 
+            
+            
+    #check all possible win / lose conditions,
+    #start with if player busts, check if dealer has black jack, if player has blackjack, see winner, if player doesn't , check for dealers black jack, if none, check winner.
+        if playerVals[0] > 21:
+            print("You have busted - too bad")
+            print("\nYou busted, your score for this round is -1")
+            score -= 1
+            
+        else:
+            dealerBlackJack = checkBlackJack(dealerVals, dealer)
+            if haveBlackJack == True:
+                print("You have BLACK JACK!!")
+                print(f"Dealer hand is:   " + " ".join(dealer))
+                if dealerBlackJack == True:
+                    print("Dealer has BLACK JACK")
+                    print("\nYou tied with the dealer, that is a push and your score for this round is 0")
+                else:
+                    print("Dealer does not have BLACK JACK")
+                    print("\nBLACK JACK yields a score of 2")
+                    score += 2
+            else:
+                print("Dealer hand is:   " + " ".join(dealer))
+                if dealerBlackJack == True:
+                    print("Dealer has BLACK JACK")
+                    print("\nThe dealer beat your hand, so your score for this round is -1")
+                    score -= 1
+                else:
+                    #enter dealer gameplay, run as needed.
+                    dBust, dValue, deck = dealerBust(dealer, dealerVals, deck)
+                    if dBust:
+                        print("Dealer Busted, your score for this round is 1")
+                        score += 1
+                    else:
+                        playerBestVal = bestValue(playerVals)
+                        if dValue > playerBestVal:
+                            print("\nThe dealer beat your hand, so your score for this round is -1")
+                            score -= 1
+                        elif dValue == playerBestVal:
+                            print("\nYou tied with the dealer, that is a push and your score for this round is 0")
+                        else:
+                            print("\nYou beat the dealer, your score for this round is 1")
+                            score += 1
+                            
+        #end of game, display total score and give option to play again
+        print(f"Your total score is: {score}")
+        playAgain = str(input("\nPlay again? Y or N: "))
+        if playAgain.lower() != 'y':
+            keepPlaying = False
+            print("\nThanks for playing, good-bye...")
